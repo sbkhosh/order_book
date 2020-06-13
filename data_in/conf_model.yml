@@ -1,0 +1,2 @@
+file_in: 'TickData.xlsx'
+use_cols: "C:F,I:L,N:Q,S:U"

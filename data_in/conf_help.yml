@@ -1,0 +1,4 @@
+font_size: 12
+cut_cluster: False
+cut_cluster_num: 30
+max_cluster_rep: 50
