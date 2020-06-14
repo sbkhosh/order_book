@@ -6,6 +6,7 @@ import joblib
 import matplotlib
 import matplotlib.gridspec as gridspec
 import matplotlib.pyplot as plt
+import matplotlib.dates as mdates
 import numpy as np
 import pandas as pd
 import plotly.offline as pyoff
@@ -95,6 +96,7 @@ def get_dtws_cluster(data, method, metric, max_cluster, cluster_select, idx_page
         res['1st'] = [ str(combs[k][0]) for k,el in enumerate(combs) ]
         res['2nd'] = [ str(combs[k][1]) for k,el in enumerate(combs) ]
         res['dtw'] = [ dtws[k] for k,el in enumerate(combs) ]
+        print(res['dtw'])
         max_dtw = max(res['dtw'])
         res['dtw'] = [ el/max_dtw for el in res['dtw'] ]
         res.to_pickle(path)
@@ -577,4 +579,50 @@ def plot_clusters_uniq(df_res, df_raw, method, metric, max_cluster, cluster_sele
     plt.savefig('data_out/clusters_uniq_draw_'+str(method)+'_'+str(metric)+'_'+str(cluster_select)+'_idx_'+str(idx_page)+'.pdf')
     plt.savefig('data_out/clusters_uniq_draw_'+str(method)+'_'+str(metric)+'_'+str(cluster_select)+'_idx_'+str(idx_page)+'.png')
 
+def rec_def(s, eps=0.1, steps=10):
+    d = pdist(s[:,None])
+    d = np.floor(d/eps)
+    d[d>steps] = steps
+    Z = squareform(d)
+    return(Z)
     
+def rec_plot(df,category,idx_page):
+    dates_perf = df.index
+    s = df['Size']
+    epsilons = [0.10,0.30,0.60,0.80]
+        
+    a = [rec_def(s, eps=el) for el in epsilons]
+
+    fig = plt.figure(figsize=(32,16))
+    
+    size = 0.33
+    alignement = 0.1
+    font = {
+        'family': 'serif',
+        'color':  'darkblue',
+        'weight': 'normal',
+        'size': 16,
+        }
+
+    plt.suptitle(str(category))
+    ax_recurrence_0 = fig.add_axes([0.1, 0.1, 0.9, 0.9])
+
+    ax_recurrence_0.clear()
+
+    xmin,xmax = mdates.datestr2num([str(dates_perf[0]),str(dates_perf[-1])])
+    ymin,ymax = mdates.datestr2num([str(dates_perf[0]),str(dates_perf[-1])])    
+
+    xfmt = mdates.DateFormatter('%H:%M:%S')
+    ax_recurrence_0.xaxis.set_major_formatter(xfmt)
+    ax_recurrence_0.yaxis.set_major_formatter(xfmt)
+    
+    # recurrence plots
+    ax_recurrence_0.imshow(a[0], extent=[xmin,xmax,ymax,ymin], cmap='gray')
+    ax_recurrence_0.set_title("Recurrence plot - epsilon = "+str(epsilons[0]), fontdict=font)
+    ax_recurrence_0.xaxis_date()
+    ax_recurrence_0.yaxis_date()
+
+    plt.tight_layout()
+
+    plt.savefig('data_out/rec_plot_'+str(category.lower())+'_idx_'+str(idx_page)+'.pdf')
+    plt.savefig('data_out/rec_plot_'+str(category.lower())+'_idx_'+str(idx_page)+'.png')

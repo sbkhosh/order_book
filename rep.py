@@ -75,6 +75,9 @@ def get_conf_helper():
 trade_data, bid_data, ask_data, volume_data, df_trade_cluster, df_bid_cluster, df_ask_cluster = get_data_all()
 cut_cluster, cut_cluster_num, max_cluster_rep = get_conf_helper()
 options_max_cluster = [{'label': i, 'value': i} for i in range(int(max_cluster_rep))]
+####################################################################################################################################################################################
+#                                                                                                                                                                                  # 
+####################################################################################################################################################################################
 
 def get_layout(idx_page):
     html_res = \
@@ -93,7 +96,7 @@ def get_layout(idx_page):
             dcc.Dropdown(
                 id='method-dropdown-'+str(idx_page),
                 options=[{'label': i, 'value': i} for i in ['single','complete','average','weighted','centroid','median','ward']],
-                value='ward',
+                value='complete',
                 style=STYLE_2
             )
             ],style=STYLE_3),
@@ -102,7 +105,7 @@ def get_layout(idx_page):
             dcc.Dropdown(
                 id='metric-dropdown-'+str(idx_page),
                 options=[{'label': i, 'value': i} for i in ['euclidean','correlation','cosine','dtw']],
-                value='euclidean',
+                value='dtw',
                 style=STYLE_2
             )
             ],style=STYLE_3),
@@ -139,11 +142,18 @@ def get_layout(idx_page):
                            src = '',
                            style=STYLE_4)
         ]),
+        html.Div([
+            html.Div(html.P([html.Br(),html.H2(html.B('Reccurence plot'))]), style=STYLE_5),
+            html.Img(id = 'rec-plot-'+str(idx_page),
+                           src = '',
+                           style=STYLE_4)
+        ]),
     ])
     return(html_res)
 
-def cluster_draw(df_all, method, metric, max_cluster, selected_cluster, idx_page, ts_space=5):
+def cluster_draw(df_all, method, metric, max_cluster, selected_cluster, idx_page, df_base, category, ts_space=5):
     df_res, Z, ddata, dm = clusterlib.maxclust_draw_rep(df_all.iloc[:,:], method, metric, int(max_cluster), idx_page, 5)
+    
     filename_0 = 'data_out/max_cluster_draw_'+str(method)+'_'+str(metric)+'_'+str(max_cluster)+'_idx_'+str(idx_page)
     image_name_0 = filename_0+".png"
     location_0 = os.getcwd() + '/' + image_name_0
@@ -159,7 +169,15 @@ def cluster_draw(df_all, method, metric, max_cluster, selected_cluster, idx_page
         encoded_string_5 = base64.b64encode(image_file_5.read()).decode()
     encoded_image_5 = "data:image/png;base64," + encoded_string_5
 
-    return(encoded_image_0,df_res,encoded_image_5)
+    clusterlib.rec_plot(df_base,category,idx_page)
+    filename_6 = 'data_out/rec_plot_'+str(category.lower())+'_idx_'+str(idx_page)
+    image_name_6=filename_6+".png"
+    location_6 = os.getcwd() + '/' + image_name_6
+    with open('%s' %location_6, "rb") as image_file_6:
+        encoded_string_6 = base64.b64encode(image_file_6.read()).decode()
+    encoded_image_6 = "data:image/png;base64," + encoded_string_6
+    
+    return(encoded_image_0,df_res,encoded_image_5,encoded_image_6)
 
 ###################
 # core of the app #  
@@ -193,22 +211,6 @@ def update_cluster_dropdown(max_cluster_val):
     return(options)
 
 @app.callback(
-    Output('selected-cluster-dropdown-2', 'options'),
-    [Input('max-cluster-dropdown-2', 'value')]
-)
-def update_cluster_dropdown(max_cluster_val):
-    options=[{'label': opt, 'value': opt} for opt in range(1,int(max_cluster_val)+1)]
-    return(options)
-
-@app.callback(
-    Output('selected-cluster-dropdown-3', 'options'),
-    [Input('max-cluster-dropdown-3', 'value')]
-)
-def update_cluster_dropdown(max_cluster_val):
-    options=[{'label': opt, 'value': opt} for opt in range(1,int(max_cluster_val)+1)]
-    return(options)
-
-@app.callback(
     Output('metric-dropdown-1', 'options'),
     [Input('method-dropdown-1', 'value')]
 )
@@ -227,6 +229,7 @@ page_1_layout = html.Div([ get_layout(1) ])
 @app.callback([Output('cluster-plot-1', 'src'),
                Output('cluster-table-1', 'children'),
                Output('dtws-uniq-plot-1', 'src'),
+               Output('rec-plot-1', 'src')
                ],
               [Input("category-dropdown-1", "value"),
                Input("method-dropdown-1", "value"),
@@ -239,14 +242,17 @@ def update_fig(category,method,metric,max_cluster,selected_cluster):
     max_cluster = int(max_cluster)
     if(category == 'Trade'):
         df_all = df_trade_cluster
+        df_base = trade_data
     elif(category == 'Bid'):
         df_all = df_bid_cluster
+        df_base = bid_data
     elif(category == 'Ask'):
         df_all = df_ask_cluster
+        df_base = ask_data
 
-    encoded_image_0, df_res, encoded_image_5 = cluster_draw(df_all, method, metric, max_cluster, selected_cluster, 10)
+    encoded_image_0, df_res, encoded_image_5, encoded_image_6 = cluster_draw(df_all, method, metric, max_cluster, selected_cluster, 1, df_base, category, 5)
     cluster_html_table = df_to_table(df_res)                                                                  
-    return(encoded_image_0, cluster_html_table, encoded_image_5)
+    return(encoded_image_0, cluster_html_table, encoded_image_5, encoded_image_6)
 
 ####################################################################################################################################################################################
 #                                                                                            page display                                                                          # 
