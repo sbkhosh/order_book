@@ -96,7 +96,7 @@ def get_layout(idx_page):
             dcc.Dropdown(
                 id='method-dropdown-'+str(idx_page),
                 options=[{'label': i, 'value': i} for i in ['single','complete','average','weighted','centroid','median','ward']],
-                value='complete',
+                value='ward',
                 style=STYLE_2
             )
             ],style=STYLE_3),
@@ -105,7 +105,7 @@ def get_layout(idx_page):
             dcc.Dropdown(
                 id='metric-dropdown-'+str(idx_page),
                 options=[{'label': i, 'value': i} for i in ['euclidean','correlation','cosine','dtw']],
-                value='dtw',
+                value='euclidean',
                 style=STYLE_2
             )
             ],style=STYLE_3),
@@ -114,7 +114,7 @@ def get_layout(idx_page):
             dcc.Dropdown(
                 id='max-cluster-dropdown-'+str(idx_page),
                 options=[{'label': i, 'value': i} for i in range(int(max_cluster_rep))],
-                value='17',
+                value='12',
                 style=STYLE_2
             )
             ],style=STYLE_3),
@@ -125,7 +125,7 @@ def get_layout(idx_page):
                            style=STYLE_4)
         ]),
         html.Div([
-            html.Div(html.H6('Cluster Selected'),style=STYLE_6),
+            html.Div(html.H6('Cluster Selected (only select those with cluster_size larger than one for the DTW analysis)'),style=STYLE_6),
             dcc.Dropdown(
                 id='selected-cluster-dropdown-'+str(idx_page),
                 value='9',
@@ -145,6 +145,12 @@ def get_layout(idx_page):
         html.Div([
             html.Div(html.P([html.Br(),html.H2(html.B('Reccurence plot'))]), style=STYLE_5),
             html.Img(id = 'rec-plot-'+str(idx_page),
+                           src = '',
+                           style=STYLE_4)
+        ]),
+        html.Div([
+            html.Div(html.P([html.Br(),html.H2(html.B('Matrix plot'))]), style=STYLE_5),
+            html.Img(id = 'mtrx-plot-'+str(idx_page),
                            src = '',
                            style=STYLE_4)
         ]),
@@ -176,9 +182,17 @@ def cluster_draw(df_all, method, metric, max_cluster, selected_cluster, idx_page
     with open('%s' %location_6, "rb") as image_file_6:
         encoded_string_6 = base64.b64encode(image_file_6.read()).decode()
     encoded_image_6 = "data:image/png;base64," + encoded_string_6
-    
-    return(encoded_image_0,df_res,encoded_image_5,encoded_image_6)
 
+    clusterlib.matrix_plot(df_all,category,idx_page)
+    filename_7 = 'data_out/matrix_plot_'+str(category.lower())+'_idx_'+str(idx_page)
+    image_name_7=filename_7+".png"
+    location_7 = os.getcwd() + '/' + image_name_7
+    with open('%s' %location_7, "rb") as image_file_7:
+        encoded_string_7 = base64.b64encode(image_file_7.read()).decode()
+    encoded_image_7 = "data:image/png;base64," + encoded_string_7
+
+    return(encoded_image_0,df_res,encoded_image_5,encoded_image_6,encoded_image_7)
+    
 ###################
 # core of the app #  
 ###################
@@ -201,7 +215,7 @@ def toggle_active_links(pathname):
     if pathname == "/":
         return True, False, False
     return [pathname == f"/page-{i}" for i in range(1, 4)]
-
+    
 @app.callback(
     Output('selected-cluster-dropdown-1', 'options'),
     [Input('max-cluster-dropdown-1', 'value')]
@@ -229,7 +243,8 @@ page_1_layout = html.Div([ get_layout(1) ])
 @app.callback([Output('cluster-plot-1', 'src'),
                Output('cluster-table-1', 'children'),
                Output('dtws-uniq-plot-1', 'src'),
-               Output('rec-plot-1', 'src')
+               Output('rec-plot-1', 'src'),
+               Output('mtrx-plot-1', 'src')
                ],
               [Input("category-dropdown-1", "value"),
                Input("method-dropdown-1", "value"),
@@ -250,10 +265,10 @@ def update_fig(category,method,metric,max_cluster,selected_cluster):
         df_all = df_ask_cluster
         df_base = ask_data
 
-    encoded_image_0, df_res, encoded_image_5, encoded_image_6 = cluster_draw(df_all, method, metric, max_cluster, selected_cluster, 1, df_base, category, 5)
+    encoded_image_0, df_res, encoded_image_5, encoded_image_6, encoded_image_7 = cluster_draw(df_all, method, metric, max_cluster, selected_cluster, 1, df_base, category, 5)
     cluster_html_table = df_to_table(df_res)                                                                  
-    return(encoded_image_0, cluster_html_table, encoded_image_5, encoded_image_6)
-
+    return(encoded_image_0, cluster_html_table, encoded_image_5, encoded_image_6, encoded_image_7)
+   
 ####################################################################################################################################################################################
 #                                                                                            page display                                                                          # 
 ####################################################################################################################################################################################

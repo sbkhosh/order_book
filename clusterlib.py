@@ -11,6 +11,7 @@ import numpy as np
 import pandas as pd
 import plotly.offline as pyoff
 import plotly.graph_objs as go
+import re
 import scipy
 import scipy.cluster.hierarchy as hac
 import scipy.spatial.distance as ssd
@@ -89,14 +90,12 @@ def get_dtws_cluster(data, method, metric, max_cluster, cluster_select, idx_page
         res = pd.read_pickle(path)
     else:
         cols = data.columns.values
-        print(cols)
         combs = list(itertools.permutations(cols,2))
         dtws = Parallel(n_jobs=-1)(delayed(dtw_ts_fast)(data[str(el[0])],data[str(el[1])]) for el in combs)
         res = pd.DataFrame()
         res['1st'] = [ str(combs[k][0]) for k,el in enumerate(combs) ]
         res['2nd'] = [ str(combs[k][1]) for k,el in enumerate(combs) ]
         res['dtw'] = [ dtws[k] for k,el in enumerate(combs) ]
-        print(res['dtw'])
         max_dtw = max(res['dtw'])
         res['dtw'] = [ el/max_dtw for el in res['dtw'] ]
         res.to_pickle(path)
@@ -357,33 +356,49 @@ def maxclust_draw_rep(df, method, metric, max_cluster, idx_page, ts_space=1):
     # get cluster labels
     y = fcluster(Z, max_cluster, criterion='maxclust')
     y = pd.DataFrame(y,columns=['y'])
-   
+
     # get individual names for each cluster
     df_clst = pd.DataFrame()
     df_clst['index']  = df.index
     df_clst['label']  = y
     
     # summarize info for output
-    dct_sum = {'cluster': [], 'cluster_size': [], 'components': []}
+    dct_sum = {'cluster_idx': [], 'cluster_size': [], 'components': []}
     for i in range(max_cluster):
         elements = df_clst[df_clst['label']==i+1]['index'].tolist()
         size = len(elements)
-        dct_sum['cluster'].append(i+1)
+        dct_sum['cluster_idx'].append(i+1)
         dct_sum['cluster_size'].append(size)
         dct_sum['components'].append('\n'+' | '.join(list(map(str,elements))))
-    dct_sum['cluster'] = dct_sum['cluster'][::-1]        
+    dct_sum['cluster_idx'] = dct_sum['cluster_idx'][::-1]
     df_sum = pd.DataFrame.from_dict(dct_sum)
-   
-    # merge with original dataset
-    dx=pd.concat([df.reset_index(drop=True), y],axis=1)
 
-    # add timeseries graphs to gridspec
-    for cluster in range(1,max_cluster+1):
-        reverse_plot = max_cluster+1-cluster
-        plt.subplot(gs[reverse_plot-1:reverse_plot,max_cluster-ts_space:max_cluster])
-        plt.axis('off')
-        for i in range(len(dx[dx['y']==cluster])):
-            plt.plot(dx[dx['y']==cluster].T[:-1].iloc[:,i])
+    # # merge with original dataset
+    # dx=pd.concat([df.reset_index(drop=True), y],axis=1)
+
+    dgg = df.copy(deep=True)
+    dgg['y']=y.values
+    dgg['Dates']=[ str(el) for el in dgg.index ]
+    cols_select = [ el for el in list(dgg.columns) if isinstance(el,int) ]
+
+    df_plots = []
+    for el in ddata['ivl']:
+        if(type(el)==datetime.time):
+            dtt = str(el)
+            df_plots.append(list(dgg[dgg['Dates']==dtt][cols_select].values[0]))
+        else:
+            intt = int(el.split('(')[1].split(')')[0])
+            ts_comps = df_sum[df_sum['cluster_size']==intt]['components'].values
+            ts = [ re.sub(r"[^a-zA-Z0-9]\n", '', k).replace('\n','').replace(' ','') for k in ts_comps[0].split('|') ]
+            df_plots.append([ list(dgg[dgg['Dates']==el][cols_select].values[0]) for el in ts ])
+    
+    for cluster in range(1,max_cluster+1): 
+        plt.subplot(gs[max_cluster-cluster:max_cluster-cluster+1,max_cluster-ts_space:max_cluster])
+        if(np.sum(list(any(isinstance(el, list) for el in df_plots[cluster-1]))) > 0):
+            [ plt.plot(el) for el in df_plots[cluster-1] ]
+        else:
+            plt.plot(df_plots[cluster-1])
+            
     plt.tight_layout()
 
     plt.savefig('data_out/max_cluster_draw_'+str(method)+'_'+str(metric)+'_'+str(max_cluster)+'_idx_'+str(idx_page)+'.pdf')
@@ -391,7 +406,7 @@ def maxclust_draw_rep(df, method, metric, max_cluster, idx_page, ts_space=1):
     df_sum.to_csv('data_out/max_cluster_draw_'+str(method)+'_'+str(metric)+'_'+str(max_cluster)+'_idx_'+str(idx_page)+'.csv')
     df_sum.to_excel('data_out/max_cluster_draw_'+str(method)+'_'+str(metric)+'_'+str(max_cluster)+'_idx_'+str(idx_page)+'.xlsx')
     return(df_sum, Z, ddata, dm)
-
+    
 def rep_string(text):
     rep = {"\n": "", " | ": " "}
     rep = dict((re.escape(k), v) for k, v in rep.items()) 
@@ -426,7 +441,7 @@ def get_qty_sum(df_res, df_raw, method, metric, max_cluster, idx_page):
             frame.axes.get_xaxis().set_visible(False)
         df_select = df_all_res[el]
         plt.plot(df_select.index,df_select[[k for k in df_select.columns if 'cum_ret' in k]])
-    plt.tight_layout()
+    # plt.tight_layout()
 
     plt.savefig('data_out/qty_cluster_draw_'+str(method)+'_'+str(metric)+'_'+str(max_cluster)+'_idx_'+str(idx_page)+'.pdf')
     plt.savefig('data_out/qty_cluster_draw_'+str(method)+'_'+str(metric)+'_'+str(max_cluster)+'_idx_'+str(idx_page)+'.png')
@@ -593,10 +608,10 @@ def rec_plot(df,category,idx_page):
         
     a = [rec_def(s, eps=el) for el in epsilons]
 
-    fig = plt.figure(figsize=(32,16))
-    
     size = 0.33
     alignement = 0.1
+
+    fig = plt.figure(figsize=(32,16))
     font = {
         'family': 'serif',
         'color':  'darkblue',
@@ -606,7 +621,6 @@ def rec_plot(df,category,idx_page):
 
     plt.suptitle(str(category))
     ax_recurrence_0 = fig.add_axes([0.1, 0.1, 0.9, 0.9])
-
     ax_recurrence_0.clear()
 
     xmin,xmax = mdates.datestr2num([str(dates_perf[0]),str(dates_perf[-1])])
@@ -622,7 +636,40 @@ def rec_plot(df,category,idx_page):
     ax_recurrence_0.xaxis_date()
     ax_recurrence_0.yaxis_date()
 
-    plt.tight_layout()
+    # plt.tight_layout()
 
     plt.savefig('data_out/rec_plot_'+str(category.lower())+'_idx_'+str(idx_page)+'.pdf')
     plt.savefig('data_out/rec_plot_'+str(category.lower())+'_idx_'+str(idx_page)+'.png')
+
+def matrix_plot(df,category,idx_page):
+    dates_perf = df.index
+
+    df.reset_index(inplace=True)
+    
+    fig = plt.figure(figsize=(32,16))
+    font = {
+        'family': 'serif',
+        'color':  'darkblue',
+        'weight': 'normal',
+        'size': 16,
+        }
+
+    plt.suptitle(str(category))
+    ax_recurrence_0 = fig.add_axes([0.1, 0.1, 0.9, 0.9])
+    ax_recurrence_0.clear()
+
+    # xmin,xmax = mdates.datestr2num([str(dates_perf[0]),str(dates_perf[-1])])
+    ymin,ymax = mdates.datestr2num([str(dates_perf[0]),str(dates_perf[-1])])    
+
+    xfmt = mdates.DateFormatter('%H:%M:%S')
+    # ax_recurrence_0.xaxis.set_major_formatter(xfmt)
+    ax_recurrence_0.yaxis.set_major_formatter(xfmt)
+    plt.pcolor(df)
+    # sns.heatmap(df, annot=True)
+    ax_recurrence_0.set_title('Matrix plot of the time series', fontdict=font)
+    # ax_recurrence_0.xaxis_date()
+    ax_recurrence_0.yaxis_date()
+    
+    plt.savefig('data_out/matrix_plot_'+str(category.lower())+'_idx_'+str(idx_page)+'.pdf')
+    plt.savefig('data_out/matrix_plot_'+str(category.lower())+'_idx_'+str(idx_page)+'.png')
+    
