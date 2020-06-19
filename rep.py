@@ -168,30 +168,30 @@ def cluster_draw(df_all, method, metric, max_cluster, selected_cluster, idx_page
     encoded_image_0 = "data:image/png;base64," + encoded_string_0
 
     clusterlib.get_dtw_uniq_cluster(df_res, df_all, method, metric, max_cluster, selected_cluster, idx_page)
-    filename_5 = 'data_out/dtw_uniq_cluster_draw_'+str(method)+'_'+str(metric)+'_'+str(selected_cluster)+'_idx_'+str(idx_page)
-    image_name_5=filename_5+".png"
-    location_5 = os.getcwd() + '/' + image_name_5
-    with open('%s' %location_5, "rb") as image_file_5:
-        encoded_string_5 = base64.b64encode(image_file_5.read()).decode()
-    encoded_image_5 = "data:image/png;base64," + encoded_string_5
+    filename_1 = 'data_out/dtw_uniq_cluster_draw_'+str(method)+'_'+str(metric)+'_'+str(selected_cluster)+'_idx_'+str(idx_page)
+    image_name_1=filename_1+".png"
+    location_1 = os.getcwd() + '/' + image_name_1
+    with open('%s' %location_1, "rb") as image_file_1:
+        encoded_string_1 = base64.b64encode(image_file_1.read()).decode()
+    encoded_image_1 = "data:image/png;base64," + encoded_string_1
 
     clusterlib.rec_plot(df_base,category,idx_page)
-    filename_6 = 'data_out/rec_plot_'+str(category.lower())+'_idx_'+str(idx_page)
-    image_name_6=filename_6+".png"
-    location_6 = os.getcwd() + '/' + image_name_6
-    with open('%s' %location_6, "rb") as image_file_6:
-        encoded_string_6 = base64.b64encode(image_file_6.read()).decode()
-    encoded_image_6 = "data:image/png;base64," + encoded_string_6
+    filename_2 = 'data_out/rec_plot_'+str(category.lower())+'_idx_'+str(idx_page)
+    image_name_2=filename_2+".png"
+    location_2 = os.getcwd() + '/' + image_name_2
+    with open('%s' %location_2, "rb") as image_file_2:
+        encoded_string_2 = base64.b64encode(image_file_2.read()).decode()
+    encoded_image_2 = "data:image/png;base64," + encoded_string_2
 
     clusterlib.matrix_plot(df_all,category,idx_page)
-    filename_7 = 'data_out/matrix_plot_'+str(category.lower())+'_idx_'+str(idx_page)
-    image_name_7=filename_7+".png"
-    location_7 = os.getcwd() + '/' + image_name_7
-    with open('%s' %location_7, "rb") as image_file_7:
-        encoded_string_7 = base64.b64encode(image_file_7.read()).decode()
-    encoded_image_7 = "data:image/png;base64," + encoded_string_7
+    filename_3 = 'data_out/matrix_plot_'+str(category.lower())+'_idx_'+str(idx_page)
+    image_name_3=filename_3+".png"
+    location_3 = os.getcwd() + '/' + image_name_3
+    with open('%s' %location_3, "rb") as image_file_3:
+        encoded_string_3 = base64.b64encode(image_file_3.read()).decode()
+    encoded_image_3 = "data:image/png;base64," + encoded_string_3
 
-    return(encoded_image_0,df_res,encoded_image_5,encoded_image_6,encoded_image_7)
+    return(encoded_image_0,df_res,encoded_image_1,encoded_image_2,encoded_image_3)
     
 ###################
 # core of the app #  
@@ -265,9 +265,9 @@ def update_fig(category,method,metric,max_cluster,selected_cluster):
         df_all = df_ask_cluster
         df_base = ask_data
 
-    encoded_image_0, df_res, encoded_image_5, encoded_image_6, encoded_image_7 = cluster_draw(df_all, method, metric, max_cluster, selected_cluster, 1, df_base, category, 5)
+    encoded_image_0, df_res, encoded_image_1, encoded_image_2, encoded_image_3 = cluster_draw(df_all, method, metric, max_cluster, selected_cluster, 1, df_base, category, 5)
     cluster_html_table = df_to_table(df_res)                                                                  
-    return(encoded_image_0, cluster_html_table, encoded_image_5, encoded_image_6, encoded_image_7)
+    return(encoded_image_0, cluster_html_table, encoded_image_1, encoded_image_2, encoded_image_3)
    
 ####################################################################################################################################################################################
 #                                                                                            page display                                                                          # 

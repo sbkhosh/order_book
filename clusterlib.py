@@ -643,9 +643,7 @@ def rec_plot(df,category,idx_page):
 
 def matrix_plot(df,category,idx_page):
     dates_perf = df.index
-
-    df.reset_index(inplace=True)
-    
+        
     fig = plt.figure(figsize=(32,16))
     font = {
         'family': 'serif',
@@ -658,18 +656,22 @@ def matrix_plot(df,category,idx_page):
     ax_recurrence_0 = fig.add_axes([0.1, 0.1, 0.9, 0.9])
     ax_recurrence_0.clear()
 
-    # xmin,xmax = mdates.datestr2num([str(dates_perf[0]),str(dates_perf[-1])])
-    ymin,ymax = mdates.datestr2num([str(dates_perf[0]),str(dates_perf[-1])])    
+    xmin,xmax = mdates.datestr2num([str(dates_perf[0]),str(dates_perf[-1])])
+    # ymin,ymax = mdates.datestr2num([str(dates_perf[0]),str(dates_perf[-1])])    
 
     xfmt = mdates.DateFormatter('%H:%M:%S')
-    # ax_recurrence_0.xaxis.set_major_formatter(xfmt)
-    ax_recurrence_0.yaxis.set_major_formatter(xfmt)
-    plt.pcolor(df)
-    # sns.heatmap(df, annot=True)
-    ax_recurrence_0.set_title('Matrix plot of the time series', fontdict=font)
-    # ax_recurrence_0.xaxis_date()
-    ax_recurrence_0.yaxis_date()
-    
+    ax_recurrence_0.xaxis.set_major_formatter(xfmt)
+    # ax_recurrence_0.yaxis.set_major_formatter(xfmt)
+
+    # recurrence plots
+    ax_recurrence_0.imshow(df.T.values, extent=[xmin, xmax, -1.5, len(df.columns)-1.5], cmap='gray')
+    ax_recurrence_0.set_title("Heatmap of time evolution of trade orders", fontdict=font)
+    ax_recurrence_0.xaxis_date()
+    # ax_recurrence_0.yaxis_date()
+
+    # plt.tight_layout()
+
     plt.savefig('data_out/matrix_plot_'+str(category.lower())+'_idx_'+str(idx_page)+'.pdf')
     plt.savefig('data_out/matrix_plot_'+str(category.lower())+'_idx_'+str(idx_page)+'.png')
+
     
