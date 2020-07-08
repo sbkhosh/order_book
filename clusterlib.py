@@ -342,7 +342,7 @@ def maxclust_draw_rep(df, method, metric, max_cluster, idx_page, ts_space=1):
                            truncate_mode='lastp',
                            p=max_cluster,
                            show_leaf_counts=True,
-                           labels=cols,
+                           labels=list(cols),
                            show_contracted=True)
 
     # check with elbow method
